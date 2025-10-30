@@ -8,20 +8,21 @@ import { useRouter } from "expo-router";
 import useFetch from "@/services/useFetch";
 import { fetchMovies } from "@/services/api";
 import MovieCard from "../components/MovieCard";
+import  { useState } from "react";
 
 export default function Index() {
   const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { 
     data: movies, 
     loading: moviesLoading, 
     error: moviesError } = useFetch(() => fetchMovies({
-    query: ''
+    query: searchQuery
   }))
 
   return (
     <View className="flex-1 bg-primary">
-      {/* Background image shouldn't intercept touches so ScrollView can receive them */}
       <View pointerEvents="none" className="absolute w-full h-full z-0">
         <Image source={images.bg} className="w-full h-full" />
       </View>
@@ -45,8 +46,9 @@ export default function Index() {
           <Text className="text-red-500 text-center mt-10">{moviesError?.message}</Text>
         ) : (
           <View className="mt-5">
-          <SearchBar onPress={() => router.push('/search')}
-            placeholder="Search for movies or TV series"
+          <SearchBar value={searchQuery} onPress={() => router.push('/search')}
+            placeholder="Search for movies or TV series"    
+            onChangeText={(text) => setSearchQuery(text)}
             />
 
             <>
