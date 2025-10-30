@@ -1,6 +1,5 @@
 import {ActivityIndicator, FlatList, Image, ScrollView} from "react-native";
 import { images } from "@/constants/images";
-import { Link } from "expo-router";
 import { Text, View } from "react-native";
 import {icons} from "@/constants/icons";
 import SearchBar from "@/app/components/SearchBar";
@@ -8,18 +7,27 @@ import { useRouter } from "expo-router";
 import useFetch from "@/services/useFetch";
 import { fetchMovies } from "@/services/api";
 import MovieCard from "../components/MovieCard";
-import  { useState } from "react";
+import { getTrendingMovies } from "@/services/appwrite";
 
 export default function Index() {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
+
+  const {
+    data:  trendingMovies,
+    loading: trendingLoading,
+    error: trendingError
+  } = useFetch(getTrendingMovies);
 
   const { 
     data: movies, 
     loading: moviesLoading, 
-    error: moviesError } = useFetch(() => fetchMovies({
-    query: searchQuery
+    error: moviesError 
+  } = useFetch(() => fetchMovies({
+    query: ''
   }))
+
+  const isLoading = moviesLoading || trendingLoading;
+  const error = moviesError || trendingError;
 
   return (
     <View className="flex-1 bg-primary">
@@ -36,49 +44,60 @@ export default function Index() {
       >
         <Image source={icons.logo} className="w-12 h-10 mt-20 mb-5 mx-auto"/>
 
-        {moviesLoading ? (
+        {isLoading ? (
           <ActivityIndicator 
-           size="large"
+            size="large"
             color="#0000ff"
             className="mt-10 self-center"
           />
-        ) : moviesError ? (
-          <Text className="text-red-500 text-center mt-10">{moviesError?.message}</Text>
+        ) : error ? (
+          <Text className="text-red-500 text-center mt-10">{error?.message}</Text>
         ) : (
           <View className="mt-5">
-          <SearchBar value={searchQuery} onPress={() => router.push('/search')}
-            placeholder="Search for movies or TV series"    
-            onChangeText={(text) => setSearchQuery(text)}
+            <SearchBar onPress={() => router.push('/search')}
+              placeholder="Search for movies or TV series"
             />
 
-            <>
-              <Text className="text-white text-lg font-semibold mt-10 mb-3">
-                Latest Movies
-              </Text>
-              <FlatList 
-                data={movies}
-                renderItem={({ item }) => (
-                 <MovieCard 
-                 {...item} 
-                 
-                 />
-                )}
-                keyExtractor={( item ) => item.id}
-                numColumns={3}
-                columnWrapperStyle={{
-                  justifyContent: 'flex-start',
-                  gap: 20,
-                  paddingRight: 5,
-                  marginBottom: 10
-                }}
-                className="mt-2 pb-32"
-                scrollEnabled={false}
-              />
-            </>
-        </View>
+            {trendingMovies && (
+              <View className="mt-10">
+                <Text className="text-lg text-white font-bold mt-5 mb-3">Trending Movies</Text>
+              </View>
+            )}
+
+            <Text className="text-white text-lg font-semibold mt-10 mb-3">
+              Latest Movies
+            </Text>
+
+            <FlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            ItemSeparatorComponent={() => <View className="w-4"/>}
+              className="mb-4 mt-3"
+              data = {trendingMovies}
+              renderItem={({ item, index }) => (
+                <Text className="text-white text-sm">{item.title}</Text>
+              )}
+              keyExtractor={(item) => item.movie_id.toString()}
+            />
+
+            <FlatList 
+              data={movies}
+              renderItem={({ item }) => (
+                <MovieCard {...item} />
+              )}
+              keyExtractor={( item ) => item.id}
+              numColumns={3}
+              columnWrapperStyle={{
+                justifyContent: 'flex-start',
+                gap: 20,
+                paddingRight: 5,
+                marginBottom: 10
+              }}
+              className="mt-2 pb-32"
+              scrollEnabled={false}
+            />
+          </View>
         )}
-
-
       </ScrollView>
     </View>
   );

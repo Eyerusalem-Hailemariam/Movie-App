@@ -7,6 +7,7 @@ import { fetchMovies } from '@/services/api'
 import { icons } from '@/constants/icons'
 import SearchBar from "@/app/components/SearchBar";
 import { useState } from 'react'
+import { updateSearchCount } from '@/services/appwrite'
 
 export default function Search() {
 
@@ -22,18 +23,34 @@ export default function Search() {
 	query: searchQuery
   }))
 
-  useEffect(() => {
-	const timeoutId = setTimeout(async () => {
-	if(searchQuery.trim()) {
-		await loadMovies();
-	}
-	else {
-		reset();
-	}
-}, 500)
+	// debounce search input -> load movies
+		useEffect(() => {
+			const timeoutId = setTimeout(async () => {
+				if (searchQuery.trim()) {
+					try {
+						await loadMovies();
+					} catch (e) {
+						
+						console.error('loadMovies error', e);
+					}
+				} else {
+					reset();
+				}
+			}, 500);
 
-return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
+			return () => clearTimeout(timeoutId);
+			
+		}, [searchQuery]);
+
+	useEffect(() => {
+		if (searchQuery.trim() && movies && movies.length > 0) {
+			if (movies?.length > 0 && movies?.[0]) {
+				updateSearchCount(searchQuery, movies[0]).catch((e) => {
+					console.error('updateSearchCount failed', e);
+				});
+			}
+		}
+	}, [movies, searchQuery]);
 
 	return (
 		<View className="flex-1 bg-primary">
