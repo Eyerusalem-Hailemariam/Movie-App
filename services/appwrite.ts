@@ -1,4 +1,5 @@
 import { Client, Databases, ID, Query } from 'react-native-appwrite';
+import { TMDB_CONFIG } from './api';
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const COLLECTION_ID = process.env.EXPO_PUBLIC_APPWRITE_COLLECTION_ID!;
@@ -56,5 +57,22 @@ export const getTrendingMovies = async(): Promise<TrendingMovie[]| undefined> =>
     } catch(error) {
         console.error("Error fetching trending movies:", error);
         return  undefined;
+    }
+}
+
+export const fetchMovieDetails = async(movieId: string): Promise<MovieDetails> => {
+    try {
+        const response = await fetch(`${TMDB_CONFIG.BASE_URL}/movie/${movieId}?api_key=${TMDB_CONFIG.API_KEY}`, {
+            method: 'GET',
+            headers: TMDB_CONFIG.Headers,
+
+        });
+        if (!response.ok) throw new Error("failed to fetch movie detail")
+        const data = await response.json();
+
+        return data;
+        } catch(error) {
+        console.log(error);
+        throw error;
     }
 }
